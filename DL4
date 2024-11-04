@@ -1,0 +1,55 @@
+1.import pandas as pd
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow.keras import layers,models
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix,classification_report
+2. dataset=pd.read_csv('creditcard.csv')
+3. dataset.size
+4. scaler=StandardScaler()
+5. x=scaler.fit_transform(dataset.drop("Class",axis=1))
+y=dataset["Class"]
+6. x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2,random_state=42)
+7. input_dim=x_train.shape[1]
+8. encoder=models.Sequential([
+    layers.Input(shape=(input_dim,)),
+    layers.Dense(32,activation="relu"),
+    layers.Dense(16,activation="relu")])
+9. decoder=models.Sequential([
+    layers.Input(shape=(16,)),
+    layers.Dense(32,activation="relu"),
+    layers.Dense(input_dim,activation="linear")])
+10. autoencoder=models.Sequential([
+    encoder,decoder])
+11. autoencoder.compile(optimizer='adam',loss='mean_squared_error')
+autoencoder.fit(x_train,x_train,epochs=10,batch_size=32,shuffle=True,validation_data=(x_test,x_test))
+12. y_pred=autoencoder.predict(x_test)
+mse=np.mean(np.power(x_test-y_pred,2),axis=1)
+13. plt.figure(figsize=(10,6))
+plt.hist(mse,bins=50,alpha=0.5,color='b',label="Recontruction Error")
+plt.xlabel("Recontruction Error")
+plt.ylabel("Frequency")
+plt.legend()
+plt.title("Reconstruction Error Distribution")
+plt.show()
+14. thresholds=np.arange(0.1,1.0,0.1)
+for threshold in thresholds:
+  anomalies=mse>threshold
+15. num_anomalies=np.sum(anomalies)
+print(f"Threshold:{threshold:.1f},Number of Anomalies:{num_anomalies}")
+16. print("Confusion_Matrix:")
+print(confusion_matrix(y_test,anomalies))
+print("\n Classification_Report:")
+print(classification_report(y_test,anomalies))
+17. import seaborn as sns
+18. plt.figure(figsize=(5,6))
+sns.heatmap(confusion_matrix(y_test,anomalies),annot=True,fmt="d",annot_kws={"size":16})
+plt.xlabel("Predicted")
+plt.ylabel("True")
+plt.xticks([0.5,1.5],rotation="horizontal")
+plt.yticks([0.5,1.5],rotation="horizontal")
+plt.title("Confusion Matrix")
+plt.show()
+
