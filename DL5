@@ -1,90 +1,114 @@
-1import numpy as np  import re 
-2data = “”” .“””  data 
-3sentences = data.split('.')    sentences 
-4clean_sent=[] 
-for sentence in sentences: 
-    if sentence=="": 
-        continue 
-    sentence = re.sub('[^A-Za-z0-9]+', ' ', (sentence)) 
-    sentence = re.sub(r'(?:^| )\w (?:$| )', ' ', (sentence)).strip() 
-    sentence = sentence.lower() 
-    clean_sent.append(sentence) 
-clean_sent 
-5from tensorflow.keras.preprocessing.text import Tokenizer 
-6tokenizer = Tokenizer() 
-tokenizer.fit_on_texts(clean_sent) 
-sequences = tokenizer.texts_to_sequences(clean_sent) 
-print(sequences) 
-index_to_word = {} 
-word_to_index = {} 
-7for i, sequence in enumerate(sequences): 
-    word_in_sentence = clean_sent[i].split()     
-    for j, value in enumerate(sequence): 
-        index_to_word[value] = word_in_sentence[j] 
-        word_to_index[word_in_sentence[j]] = value 
-print(index_to_word, "\n") 
-print(word_to_index) 
-8vocab_size = len(tokenizer.word_index) + 1 
-emb_size = 10   context_size =2   contexts = []   targets = [] 
-for sequence in sequences: 
-    for i in range(context_size, len(sequence) - context_size): 
-        target = sequence[i] 
-        context = [sequence[i - 2], sequence[i - 1], sequence[i + 1], sequence[i + 2]] 
-        contexts.append(context)       targets.append(target) 
-print(contexts, "\n")      print(targets) 
-9for i in range(5): 
-    words = [] 
-    target = index_to_word.get(targets[i]) 
-    for j in contexts[i]: 
-        words.append(index_to_word.get(j)) 
-    print(words," -> ", target) 
-X = np.array(contexts)     Y = np.array(targets) 
-10import tensorflow as tf 
-from tensorflow.keras.models import Sequential 
-from tensorflow.keras.layers import Dense, Embedding, Lambda  
-11model = Sequential([ 
-    Embedding(input_dim=vocab_size, output_dim=emb_size, input_length=2*context_size), 
-    Lambda(lambda x: tf.reduce_mean(x, axis=1)), 
-    Dense(256, activation='relu'), 
-    Dense(512, activation='relu'), 
-    Dense(vocab_size, activation='softmax') 
-]) 
-12model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy']) 
-13history = model.fit(X, Y, epochs=80) 
-14import seaborn as sns      sns.lineplot(model.history.history) 
-15from sklearn.decomposition import PCA 
-embeddings = model.get_weights()[0] 
-pca = PCA(n_components=2) 
-reduced_embeddings = pca.fit_transform(embeddings) 
-16print(" ") 
-17test_sentenses = [ 
-    "known as structured learning",    "transformers have applied to", 
-    "where they produced results" ,  "cases surpassing expert performance" 
-] 
-for sent in test_sentenses: 
-    test_words = sent.split(" ") 
-    x_test = [] 
-    for i in test_words: 
-        
-        index = word_to_index.get(i, None) 
-        if index is not None: 
-            x_test.append(index) 
-    x_test = np.array([x_test]) 
-     
-     
-    if x_test.size > 0: 
-        pred = model.predict(x_test) 
-        pred = np.argmax(pred[0]) 
-        print("pred =", test_words, "\n=", index_to_word.get(pred), "\n\n") 
-    else: 
-        print("Empty input after processing test words:", test_words) 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+1. import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense,\
+	Embedding, Lambda
+from tensorflow.keras.preprocessing.text import Tokenizer
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import re
+2. data = """We are about to study the idea of a computational process.
+Computational processes are abstract beings that inhabit computers.
+As they evolve, processes manipulate other abstract things called data.
+The evolution of a process is directed by a pattern of rules
+called a program. People create programs to direct processes. In effect,
+we conjure the spirits of the computer with our spells."""
+3. sentences = data.split(".")
+4. sentences
+5. clean_sentences = []
+for sentence in sentences:
+    if sentence == "":
+        continue;
+    sentence = re.sub('[^A-Za-z0-9]+', ' ', sentence)
+    sentence = re.sub(r'(?:^| )\w(?:$| )', ' ', sentence).strip()
+    sentence = sentence.lower()
+    clean_sentences.append(sentence)
+6. clean_sentences
+7. tokenizer = Tokenizer()
+tokenizer.fit_on_texts(corpus)
+sequences = tokenizer.texts_to_sequences(corpus)
+print("After converting our words in the corpus \
+into vector of integers:")
+print(sequences)
+8. index_to_word_map = {}
+word_to_index_map = {}
+for index_1, sequence in enumerate(sequences):
+    print(sequence)
+    words_in_sentence = clean_sentences[index_1].split()
+    print(words_in_sentence)
+    for index_2, value in enumerate(sequence):
+        index_to_word_map[value] = words_in_sentence[index_2]
+        word_to_index_map[words_in_sentence[index_2]] = value
+9. print(index_to_word_map)
+print("\n")
+print(word_to_index_map)
+10. vocab_size = len(tokenizer.word_index) + 1
+embedding_size = 10
+window_size = 2
+contexts = []
+targets = []
+for sequence in sequences:
+    for i in range(window_size, len(sequence) - window_size):
+        context = sequence[i - window_size:i] + sequence[i + 1:i + window_size + 1]
+        target = sequence[i]
+        contexts.append(context)
+        targets.append(target)
+11. for i in range(5):
+    words = []
+    target = index_to_word_map.get(targets[i])
+    for j in contexts[i]:
+        words.append(index_to_word_map.get(j))
+    print(words, "=>", target)
+12. X = np.array(contexts)
+Y = np.array(targets)
+13. model = Sequential()
+model.add(Embedding(input_dim=vocab_size, output_dim=embedding_size, input_length=2 * window_size))
+model.add(Lambda(lambda x: tf.reduce_mean(x, axis=1)))
+model.add(Dense(256, activation='relu'))
+model.add(Dense(512, activation='relu'))
+model.add(Dense(units=vocab_size, activation='softmax'))
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(X, Y, epochs=10, verbose=1)
+14. embeddings = model.get_weights()[0]
+pca = PCA(n_components=2)
+reduced_embeddings = pca.fit_transform(embeddings)
+15. plt.figure(figsize=(7, 7))
+for i, word in enumerate(tokenizer.word_index.keys()):
+    x, y = reduced_embeddings[i]
+    plt.scatter(x, y)
+    plt.annotate(word, xy=(x, y), xytext=(5, 2),
+                 textcoords='offset points',
+                 ha='right', va='bottom')
+plt.show()
+16. plt.figure(figsize=(7, 7))
+for i, word in enumerate(tokenizer.word_index.keys()):
+    x, y = reduced_embeddings[i]
+    plt.scatter(x, y)
+    plt.annotate(word, xy=(x, y), xytext=(5, 2),
+                 textcoords='offset points',
+                 ha='right', va='bottom')
+plt.show()
+17. test_sentenses = [
+    "we are to study",
+    "create programs direct processes",
+    "spirits process study program",
+    "idea study people create"
+]
+18. for test_sentense in test_sentenses:
+    test_words = test_sentense.split(" ")
+    print("Words: ", test_words)
+    x_test = []
+    for i in test_words:
+        x_test.append(word_to_index_map.get(i))
+    x_test = np.array([x_test])
+    print("Indexs: ", x_test)
+    test_predictions = model.predict(x_test)
+    y_pred = np.argmax(test_predictions[0])
+    print("Predictons: ",test_words, " => ", index_to_word_map.get(y_pred))
+    print("\n")
+
+
+
+
+
+
