@@ -1,0 +1,62 @@
+1. import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+import numpy as np
+2. (train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
+3. train_images, test_images = train_images / 255.0, test_images / 255.0
+4. class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+5. model = models.Sequential([
+    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.Flatten(),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')])
+6.model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+7. history = model.fit(train_images, train_labels, epochs=5,validation_data=(test_images, test_labels))
+8. predictions=model.predict(test_images)
+9.def plot_image(pred_index, predictions_array, true_label, img):
+    true_label, img = true_label[pred_index][0], img[pred_index]  
+    plt.grid(False)
+    plt.xticks([])
+    plt.yticks([])
+    plt.imshow(img, cmap=plt.cm.binary)
+    predicted_label = np.argmax(predictions_array)
+    color = 'blue' if predicted_label == true_label else 'red'
+    plt.xlabel(f"Predicted: {class_names[predicted_label]} ({100 * np.max(predictions_array):.2f}%)\nTrue: {class_names[true_label]}", color=color)
+10. def plot_value_array(pred_index, predictions_array, true_label):
+    true_label = true_label[pred_index][0] 
+    plt.grid(False)
+    plt.xticks(range(10), class_names, rotation=45)
+    plt.yticks(np.arange(0, 1.1, 0.1), [f"{int(i * 100)}%" for i in np.arange(0, 1.1, 0.1)])
+    thisplot = plt.bar(range(10), predictions_array, color="#777777")
+    plt.ylim([0, 1])
+    predicted_label = np.argmax(predictions_array)
+    thisplot[predicted_label].set_color('red')
+    thisplot[true_label].set_color('blue')
+11. def predict_and_plot_image(index):
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plot_image(index, predictions[index], test_labels, test_images)
+    plt.subplot(1, 2, 2)
+    plot_value_array(index, predictions[index], test_labels)
+    plt.show()
+12. def find_image_by_class(target_class):
+    for i in range(len(test_labels)):
+        if test_labels[i][0] == target_class:
+            return i
+    return -1
+13. target_class = 7  
+image_index = find_image_by_class(target_class)
+14. if image_index != -1:
+    predict_and_plot_image(image_index)
+else:
+    print("Image not found for the specified class.")
+15.test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
+print(f"Test accuracy: {test_acc}")
+print("Loss: ", test_loss)
+
